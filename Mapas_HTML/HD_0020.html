@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Museum HD Archive Explorer v14</title>
+    <style>
+        :root { --bg: #f8f9fa; --sidebar-bg: #ffffff; --border: #e0e4e8; --accent: #007aff; --text: #1a1d21; --video: #ff3b30; --audio: #ffcc00; --image: #34c759; --other: #8e8e93; }
+        body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--text); }
+        header { background: #fff; padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+        .search-row { display: flex; gap: 10px; align-items: center; }
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #explorer { display: flex; flex: 1; overflow-x: auto; padding-bottom: 10px; }
+        #metadata-panel { width: 420px; background: var(--sidebar-bg); border-left: 1px solid var(--border); padding: 25px; display: none; overflow-y: auto; }
+        .column { min-width: 350px; max-width: 500px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid var(--border); overflow-y: auto; }
+        .item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; font-size: 13px; border-bottom: 1px solid #f8f8f8; }
+        .item:hover { background: #f0f7ff; }
+        .item.active { background: var(--accent); color: white !important; }
+        .icon { margin-right: 12px; font-size: 18px; }
+        .meta-label { font-weight: bold; font-size: 10px; color: #888; text-transform: uppercase; margin-top: 15px; display: block; letter-spacing: 0.5px;}
+        .meta-value { font-size: 13px; margin-top: 4px; display: block; color: var(--text); word-break: break-all;}
+        .stats-container { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+        .stats-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; background: #eee; }
+        .bar-segment { height: 100%; transition: width 0.3s; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; align-items: center;}
+        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 250px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap;}
+        .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
+        .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
+        h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="search-row">
+        <h2 style="margin:0; font-size: 18px;">🏛️ Acervo Museu Explorer</h2>
+        <input type="text" id="search" class="search-box" placeholder="Search filenames or content..." oninput="performSearch()">
+    </div>
+</header>
+<div id="main-container">
+    <div id="explorer"></div>
+    <div id="metadata-panel">
+        <h3 style="margin-top:0">Metadata Ingest</h3>
+        <div id="meta-content"></div>
+    </div>
+</div>
+
+<script>
+const TREE = {};
+
+const EXTENSIONS = {
+    "Video": ['mp4', 'mov', 'mkv', 'avi', 'm4v', 'mts', 'm2ts', 'wmv', 'flv', 'webm', 'vob', 'ogv', '3gp', 'mxf'],
+    "Audio": ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'pcm'],
+    "Image": ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'gif', 'bmp', 'webp', 'cr2', 'nef', 'arw', 'dng'],
+    "Textual": ['doc', 'docx', 'pdf', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx']
+};
+
+const ICONS = { "Video": "🎞️", "Audio": "🎧", "Image": "🖼️", "Textual": "📝", "Other": "📄" };
+
+function formatSmartSize(mbValue) {
+    if (!mbValue || mbValue === 0) return "0 B";
+    let bytes = mbValue * 1024 * 1024; 
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+    return bytes.toFixed(2) + " " + units[i];
+}
+
+function getIcon(name, isFolder) {
+    if (isFolder) return "📁";
+    const ext = name.split('.').pop().toLowerCase();
+    for (const [category, list] of Object.entries(EXTENSIONS)) {
+        if (list.includes(ext)) return ICONS[category];
+    }
+    return ICONS["Other"];
+}
+
+function formatTime(ms) {
+    if (!ms || ms === 0) return "N/A";
+    let totalSeconds = Math.floor(ms / 1000);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
+}
+
+function copyPreviewText() {
+    const box = document.getElementById('preview-text');
+    if (box) {
+        navigator.clipboard.writeText(box.textContent);
+        alert("Content copied to clipboard!");
+    }
+}
+
+function calculateFolderStats(node) {
+    let stats = { Video: { count: 0, size: 0 }, Audio: { count: 0, size: 0 }, Image: { count: 0, size: 0 }, Textual: { count: 0, size: 0 }, Other: { count: 0, size: 0 }, totalSize: 0 };
+    function traverse(curr) {
+        for (let key in curr) {
+            if (key === "folder_size_gb") continue;
+            let item = curr[key];
+            if (item.folder_size_gb !== undefined) traverse(item);
+            else {
+                let cat = item.category || "Other";
+                if (cat === "Images") cat = "Image";
+                if (!stats[cat]) cat = "Other";
+                stats[cat].count++;
+                stats[cat].size += item.size_mb || 0;
+                stats.totalSize += item.size_mb || 0;
+            }
+        }
+    }
+    traverse(node);
+    return stats;
+}
+
+function showMetadata(name, data, path) {
+    const panel = document.getElementById("metadata-panel");
+    const content = document.getElementById("meta-content");
+    panel.style.display = "block";
+
+    const isFolder = data.folder_size_gb !== undefined;
+    let resLabel = (data.height === 720) ? " (720p)" : (data.height === 1080) ? " (1080p)" : (data.height === 2160) ? " (4K)" : "";
+    const displayRes = (data.dimension || "N/A") + resLabel;
+
+    let html = `
+        <span class="meta-label">Filename</span><span class="meta-value">${name}</span>
+        <span class="meta-label">Path</span><span class="meta-value">${data.full_path || path.join("/")}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('${(data.full_path || "").replace(/\\/g, "\\\\")}')">Copy Path</button>
+        <span class="meta-label">Size</span><span class="meta-value" style="color:var(--accent); font-weight:bold;">${formatSmartSize(isFolder ? data.folder_size_gb * 1024 : data.size_mb)}</span>
+    `;
+
+    if (isFolder) {
+        const stats = calculateFolderStats(data);
+        const getPct = (size) => stats.totalSize > 0 ? ((size / stats.totalSize) * 100).toFixed(1) : 0;
+        html += `
+            <div class="stats-container">
+                <span class="meta-label">Content Breakdown</span>
+                <div class="stats-bar">
+                    <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Image.size)}%; background:var(--image)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Textual.size + stats.Other.size)}%; background:var(--other)"></div>
+                </div>
+                <div class="stat-row"><span>🎞️ Video</span><b>${stats.Video.count}</b></div>
+                <div class="stat-row"><span>🎧 Audio</span><b>${stats.Audio.count}</b></div>
+                <div class="stat-row"><span>🖼️ Images</span><b>${stats.Image.count}</b></div>
+                <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
+            </div>`;
+    } else {
+        html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
+        if (data.category === "Video") {
+            html += `<h3>Video Technical</h3>
+                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+        } else if (data.category === "Audio") {
+        html += `<h3>Audio Technical</h3>
+            <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+            <span class="meta-label">Sample Rate</span><span class="meta-value">${data.sample_rate ? data.sample_rate + " Hz" : "N/A"}</span>
+            <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>
+            <span class="meta-label">Bitrate</span><span class="meta-value">${data.bitrate ? Math.round(data.bitrate / 1000) + " kbps" : "N/A"}</span>`;
+
+        }else if (data.category === "Image") {
+            html += `<h3>Image Technical</h3>
+                <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
+                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
+        }
+        
+        if (data.content_preview) {
+            html += `<h3>Document Content</h3>
+                     <div class="preview-box" id="preview-text"></div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
+        }
+    }
+
+    content.innerHTML = html;
+    if (data.content_preview) {
+        document.getElementById('preview-text').textContent = data.content_preview;
+    }
+}
+
+function renderColumn(node, level, path = []) {
+    const explorer = document.getElementById("explorer");
+    while (explorer.children.length > level) explorer.removeChild(explorer.lastChild);
+    const col = document.createElement("div"); col.className = "column";
+    const keys = Object.keys(node).filter(k => k !== "folder_size_gb").sort((a, b) => {
+        const aIsF = node[a].folder_size_gb !== undefined;
+        const bIsF = node[b].folder_size_gb !== undefined;
+        return (aIsF !== bIsF) ? bIsF - aIsF : a.localeCompare(b);
+    });
+    keys.forEach(name => {
+        const val = node[name];
+        const isFolder = val.folder_size_gb !== undefined;
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `<span class="icon">${getIcon(name, isFolder)}</span> <span class="item-text">${name}</span>`;
+        item.onclick = () => {
+            Array.from(col.children).forEach(c => c.classList.remove('active'));
+            item.classList.add('active');
+            showMetadata(name, val, path.concat(name));
+            if (isFolder) renderColumn(val, level + 1, path.concat(name));
+            else while (explorer.children.length > level + 1) explorer.removeChild(explorer.lastChild);
+        };
+        col.appendChild(item);
+    });
+    explorer.appendChild(col);
+}
+
+// NOVA FUNÇÃO PARA O ACERVO TOTAL
+function navigateToPath(targetPath) {
+    const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
+    let currentNode = TREE;
+    let currentPath = [];
+    
+    // Renderiza a primeira coluna
+    renderColumn(TREE, 0);
+
+    parts.forEach((part, index) => {
+        const columns = document.querySelectorAll('.column');
+        const activeColumn = columns[index];
+        if (!activeColumn) return;
+
+        const items = activeColumn.querySelectorAll('.item');
+        for (let item of items) {
+            const text = item.querySelector('.item-text').textContent;
+            if (text === part) {
+                item.click(); // Simula o clique para abrir a próxima coluna ou metadados
+                break;
+            }
+        }
+    });
+}
+
+function performSearch() {
+    const term = document.getElementById("search").value.toLowerCase();
+    const explorer = document.getElementById("explorer");
+    if (!term) { renderColumn(TREE, 0); return; }
+    const results = [];
+    function searchNode(node, currentPath) {
+        for (const key in node) {
+            if (key === "folder_size_gb") continue;
+            const item = node[key];
+            const isFolder = item.folder_size_gb !== undefined;
+            const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
+            if (isFolder) searchNode(item, currentPath.concat(key));
+        }
+    }
+    searchNode(TREE, ["Root"]);
+    explorer.innerHTML = "";
+    const col = document.createElement("div"); col.className = "column"; col.style.minWidth = "100%";
+    results.slice(0, 100).forEach(res => {
+        const div = document.createElement("div"); div.className = "item";
+        div.innerHTML = `<span class="icon">${getIcon(res.name, res.isFolder)}</span> <div><b>${res.name}</b><br><small>${res.path.join("/")}</small></div>`;
+        div.onclick = () => showMetadata(res.name, res.data, res.path);
+        col.appendChild(div);
+    });
+    explorer.appendChild(col);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderColumn(TREE, 0);
+    
+    // VERIFICA SE EXISTE UM CAMINHO NA URL (Ex: ?target=Pasta/Subpasta/Arquivo.mp4)
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    if (target) {
+        setTimeout(() => navigateToPath(target), 500); // Pequeno delay para garantir o carregamento
+    }
+});
+</script>
+</body>
+</html>
