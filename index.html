@@ -3,36 +3,215 @@
     <html lang="pt-br">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>SGA - Museu da Pessoa</title>
         <style>
-            :root { --primary: #0055ff; --bg: #f8fafc; --text: #1e293b; }
-            body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-            .header-nav { background: white; padding: 25px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
-            .search-wrapper { max-width: 800px; margin: 0 auto; position: relative; }
-            #globalSearch { width: 100%; padding: 16px 25px; border-radius: 50px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; transition: 0.2s; box-sizing: border-box; }
-            #globalSearch:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0,85,255,0.1); }
-            .filter-bar { display: flex; justify-content: center; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-            .filter-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 13px; font-weight: 600; color: #64748b; }
-            .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-            #searchResults { position: absolute; width: 100%; background: white; border-radius: 12px; max-height: 450px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 8px; display: none; text-align: left; z-index: 1100; border: 1px solid #e2e8f0; }
-            .search-item { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+            :root {
+                --primary: #0055ff;
+                --primary-hover: #0044cc;
+                --bg: #f1f5f9;
+                --card-bg: #ffffff;
+                --text-main: #0f172a;
+                --text-sub: #64748b;
+                --border: #e2e8f0;
+                --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            }
+
+            body { 
+                font-family: 'Inter', sans-serif; 
+                background-color: var(--bg); 
+                margin: 0; 
+                color: var(--text-main);
+                line-height: 1.5;
+            }
+
+            /* Header e Busca */
+            .header-nav { 
+                background: white; 
+                padding: 40px 20px; 
+                text-align: center; 
+                box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+                position: sticky; 
+                top: 0; 
+                z-index: 1000; 
+            }
+
+            .header-nav h2 {
+                font-weight: 800;
+                font-size: 1.8rem;
+                letter-spacing: -0.025em;
+                margin: 0 0 25px 0;
+            }
+
+            .search-wrapper { 
+                max-width: 700px; 
+                margin: 0 auto; 
+                position: relative; 
+            }
+
+            #globalSearch { 
+                width: 100%; 
+                padding: 18px 28px; 
+                border-radius: 16px; 
+                border: 1px solid var(--border); 
+                font-size: 16px; 
+                outline: none; 
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: var(--shadow);
+            }
+
+            #globalSearch:focus { 
+                border-color: var(--primary); 
+                box-shadow: 0 0 0 4px rgba(0,85,255,0.15); 
+            }
+
+            /* Filtros */
+            .filter-bar { 
+                display: flex; 
+                justify-content: center; 
+                gap: 10px; 
+                margin-top: 20px; 
+                flex-wrap: wrap; 
+            }
+
+            .filter-btn { 
+                padding: 10px 20px; 
+                border-radius: 12px; 
+                border: 1px solid var(--border); 
+                background: white; 
+                cursor: pointer; 
+                font-size: 14px; 
+                font-weight: 600; 
+                color: var(--text-sub);
+                transition: all 0.2s;
+            }
+
+            .filter-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+            .filter-btn.active { 
+                background: var(--text-main); 
+                color: white; 
+                border-color: var(--text-main); 
+            }
+
+            /* Resultados da Busca */
+            #searchResults { 
+                position: absolute; 
+                width: 100%; 
+                background: white; 
+                border-radius: 16px; 
+                max-height: 480px; 
+                overflow-y: auto; 
+                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); 
+                margin-top: 12px; 
+                display: none; 
+                text-align: left; 
+                z-index: 1100; 
+                border: 1px solid var(--border); 
+            }
+
+            .search-item { 
+                padding: 15px 25px; 
+                border-bottom: 1px solid #f1f5f9; 
+                cursor: pointer; 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                transition: background 0.2s;
+            }
+
             .search-item:hover { background: #f8faff; }
-            .item-hd { font-size: 10px; color: var(--primary); font-weight: 800; background: #ebf2ff; padding: 2px 6px; border-radius: 4px; margin-top: 4px; width: fit-content; }
-            .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-            .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-            .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; transition: 0.2s; }
-            .btn-view { display: block; width: 100%; padding: 10px; margin-top: 15px; background: #f1f5f9; color: #475569; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px; }
-            .btn-view:hover { background: var(--primary); color: white; }
+            
+            .item-hd { 
+                font-size: 11px; 
+                color: var(--primary); 
+                font-weight: 700; 
+                background: #eff6ff; 
+                padding: 3px 8px; 
+                border-radius: 6px; 
+                margin-top: 5px; 
+                display: inline-block;
+            }
+
+            /* Grid de Cards */
+            .container { max-width: 1300px; margin: 40px auto; padding: 0 30px; }
+            
+            .grid { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+                gap: 25px; 
+            }
+
+            .card { 
+                background: var(--card-bg); 
+                padding: 24px; 
+                border-radius: 20px; 
+                border: 1px solid var(--border); 
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            .card:hover { 
+                transform: translateY(-4px);
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            }
+
+            .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+            .card-icon { font-size: 24px; }
+            .card-title { margin: 0; font-size: 18px; font-weight: 700; }
+
+            .info-row { 
+                display: flex; 
+                justify-content: space-between; 
+                font-size: 14px; 
+                color: var(--text-sub); 
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #f8fafc;
+            }
+
+            .info-row b { color: var(--text-main); font-weight: 600; }
+
+            .btn-view { 
+                display: block; 
+                width: 100%; 
+                padding: 12px; 
+                margin-top: 20px; 
+                background: #f1f5f9; 
+                color: var(--text-main); 
+                text-align: center; 
+                text-decoration: none; 
+                border-radius: 12px; 
+                font-weight: 700; 
+                font-size: 14px; 
+                transition: all 0.2s;
+            }
+
+            .btn-view:hover { 
+                background: var(--primary); 
+                color: white; 
+            }
+
+            /* Custom Scrollbar */
+            ::-webkit-scrollbar { width: 8px; }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+            ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         </style>
     </head>
     <body>
         <div class="header-nav">
-            <h2 style="margin-0 0 20px 0; color: #0f172a;">🏛️ Acervo Central - Museu da Pessoa</h2>
+            <h2>🏛️ Acervo Central - Museu da Pessoa</h2>
             <div class="search-wrapper">
-                <input type="text" id="globalSearch" placeholder="Pesquisar em todos os HDs...">
+                <input type="text" id="globalSearch" placeholder="Pesquisar arquivos, pastas ou HDs...">
                 <div id="searchResults"></div>
                 <div class="filter-bar">
-                    <button class="filter-btn active" onclick="setFilter('all', this)">Todos</button>
+                    <button class="filter-btn active" onclick="setFilter('all', this)">Tudo</button>
                     <button class="filter-btn" onclick="setFilter('folder', this)">📂 Pastas</button>
                     <button class="filter-btn" onclick="setFilter('video', this)">🎞️ Vídeos</button>
                     <button class="filter-btn" onclick="setFilter('photo', this)">🖼️ Fotos</button>
@@ -45,257 +224,509 @@
         <div class="container">
             <div class="grid">
     
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 DIGI_001</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 4.72 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">DIGI_001</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>4.72 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/DIGI_001.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/DIGI_001.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0001</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 7.27 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0001</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>7.27 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0001.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0001.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0002</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 7.26 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0002</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>7.26 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0002.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0002.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0003</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 7.24 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0003</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>7.24 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0003.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0003.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0004</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 6.36 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0004</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>6.36 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0004.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0004.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0005</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 2.43 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0005</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>2.43 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0005.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0005.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0006</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.75 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0006</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.75 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0006.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0006.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0007</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.55 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0007</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.55 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0007.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0007.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0008</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.33 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0008</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.33 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0008.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0008.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0009</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 7.01 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 19/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0009</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>7.01 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>19/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0009.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0009.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0010</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 5.44 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 10/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0010</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>5.44 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>10/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0010.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0010.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0011</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 4.85 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 11/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0011</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>4.85 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>11/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0011.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0011.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0012</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.32 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 11/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0012</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.32 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>11/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0012.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0012.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0013</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.52 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 11/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0013</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.52 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>11/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0013.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0013.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0014</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.22 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0014</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.22 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0014.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0014.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0015</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.59 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0015</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.59 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0015.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0015.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0016</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.52 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0016</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.52 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0016.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0016.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0017</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.78 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0017</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.78 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0017.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0017.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0019</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.73 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0019</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.73 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0019.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0019.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0020</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 0 B</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0020</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>0 B</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0020.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0020.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0021</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.60 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0021</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.60 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0021.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0021.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0022</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.32 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0022</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.32 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0022.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0022.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0023</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 2.95 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0023</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>2.95 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0023.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0023.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0024</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 0 B</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0024</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>0 B</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0024.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0024.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0025</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.25 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 12/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0025</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.25 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>12/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0025.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0025.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0026</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 2.98 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 19/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0026</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>2.98 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>19/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0026.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0026.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0027</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 1.58 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 20/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0027</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>1.58 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>20/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0027.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0027.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
-            <div class="card">
-                <h3 style="margin:0 0 10px 0; font-size:16px;">📦 HD_0028</h3>
-                <div style="font-size: 13px; color: #64748b;">
-                    <div>📏 <b>Tamanho:</b> 3.59 TB</div>
-                    <div>📅 <b>Sincronizado:</b> 20/02/2026</div>
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-icon">📦</span>
+                            <h3 class="card-title">HD_0028</h3>
+                        </div>
+                        <div class="info-row">
+                            <span>Tamanho</span>
+                            <b>3.59 TB</b>
+                        </div>
+                        <div class="info-row">
+                            <span>Último Scan</span>
+                            <b>20/02/2026</b>
+                        </div>
+                    </div>
+                    <a href="Mapas_HTML/HD_0028.html" class="btn-view" target="_blank">Explorar Mapa</a>
                 </div>
-                <a href="Mapas_HTML/HD_0028.html" class="btn-view" target="_blank">Abrir Mapa</a>
-            </div>
         
             </div>
         </div>
@@ -330,15 +761,15 @@
                     resultsDiv.innerHTML = filtered.map(item => `
                         <div class="search-item" onclick="abrirNoMapa('${item.url}', '${item.p}')">
                             <div style="display:flex; flex-direction:column;">
-                                <span style="font-weight:600; font-size:14px;">${item.t} ${item.n}</span>
+                                <span style="font-weight:600; font-size:14px; color:#0f172a;">${item.t} ${item.n}</span>
                                 <span class="item-hd">${item.hd}</span>
                             </div>
-                            <span>➔</span>
+                            <span style="color:#94a3b8;">➔</span>
                         </div>
                     `).join('');
                     resultsDiv.style.display = 'block';
                 } else {
-                    resultsDiv.innerHTML = '<div style="padding:20px; text-align:center;">Nada encontrado</div>';
+                    resultsDiv.innerHTML = '<div style="padding:30px; text-align:center; color:#64748b;">Nenhum arquivo encontrado</div>';
                     resultsDiv.style.display = 'block';
                 }
             }
