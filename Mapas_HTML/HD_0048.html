@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Museum HD Archive Explorer v14</title>
+    <style>
+        :root { --bg: #f8f9fa; --sidebar-bg: #ffffff; --border: #e0e4e8; --accent: #007aff; --text: #1a1d21; --video: #ff3b30; --audio: #ffcc00; --image: #34c759; --other: #8e8e93; }
+        body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--text); }
+        header { background: #fff; padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+        .search-row { display: flex; gap: 10px; align-items: center; }
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #explorer { display: flex; flex: 1; overflow-x: auto; padding-bottom: 10px; }
+        #metadata-panel { width: 420px; background: var(--sidebar-bg); border-left: 1px solid var(--border); padding: 25px; display: none; overflow-y: auto; }
+        .column { min-width: 350px; max-width: 500px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid var(--border); overflow-y: auto; }
+        .item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; font-size: 13px; border-bottom: 1px solid #f8f8f8; }
+        .item:hover { background: #f0f7ff; }
+        .item.active { background: var(--accent); color: white !important; }
+        .icon { margin-right: 12px; font-size: 18px; }
+        .meta-label { font-weight: bold; font-size: 10px; color: #888; text-transform: uppercase; margin-top: 15px; display: block; letter-spacing: 0.5px;}
+        .meta-value { font-size: 13px; margin-top: 4px; display: block; color: var(--text); word-break: break-all;}
+        .stats-container { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+        .stats-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; background: #eee; }
+        .bar-segment { height: 100%; transition: width 0.3s; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; align-items: center;}
+        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 250px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap;}
+        .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
+        .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
+        h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="search-row">
+        <h2 style="margin:0; font-size: 18px;">🏛️ Acervo Museu Explorer</h2>
+        <input type="text" id="search" class="search-box" placeholder="Search filenames or content..." oninput="performSearch()">
+    </div>
+</header>
+<div id="main-container">
+    <div id="explorer"></div>
+    <div id="metadata-panel">
+        <h3 style="margin-top:0">Metadata Ingest</h3>
+        <div id="meta-content"></div>
+    </div>
+</div>
+
+<script>
+const TREE = {"Fundacao_Telefonica": {"Conexao Amazonica": {"ConexaoAmazonica_Institucional.mov": {"size_mb": 3691.1602, "modified": "2013-02-21 13:32:37", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\ConexaoAmazonica_Institucional.mov", "category": "Video", "dimension": "1280x1080", "height": 1080, "aspect_ratio": "1.19:1", "frame_rate": "29.970 fps", "codec": "DV", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 265499.0, "duration": 265.5, "resolution": "1280x1080", "fps": 29.97}, "Depoimentos_Editados": {"HV016_Final.mov": {"size_mb": 704.3195, "modified": "2013-02-01 11:47:47", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\Depoimentos_Editados\\HV016_Final.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 222556.0, "duration": 222.56, "resolution": "1440x1080", "fps": 29.97}, "HV017_Final.mov": {"size_mb": 657.3212, "modified": "2013-02-01 11:44:28", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\Depoimentos_Editados\\HV017_Final.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 207708.0, "duration": 207.71, "resolution": "1440x1080", "fps": 29.97}, "HV018_Final.mov": {"size_mb": 420.6804, "modified": "2013-02-01 11:36:46", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\Depoimentos_Editados\\HV018_Final.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 132933.0, "duration": 132.93, "resolution": "1440x1080", "fps": 29.97}, "HV019_Final.mov": {"size_mb": 570.5594, "modified": "2013-02-01 11:39:47", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\Depoimentos_Editados\\HV019_Final.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 180314.0, "duration": 180.31, "resolution": "1440x1080", "fps": 29.97}, "HV020_Final.mov": {"size_mb": 461.9528, "modified": "2013-02-01 11:42:36", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\Depoimentos_Editados\\HV020_Final.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 145979.0, "duration": 145.98, "resolution": "1440x1080", "fps": 29.97}, "folder_size_gb": 2.749}, "HVs_Integrais": {"HV016.mov": {"size_mb": 14806.1098, "modified": "2012-09-24 15:51:24", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\HVs_Integrais\\HV016.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4678278.0, "duration": 4678.28, "resolution": "1440x1080", "fps": 29.97}, "HV017.mov": {"size_mb": 17827.5394, "modified": "2012-09-24 11:11:38", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\HVs_Integrais\\HV017.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5632933.0, "duration": 5632.93, "resolution": "1440x1080", "fps": 29.97}, "HV018.mov": {"size_mb": 14060.9289, "modified": "2012-09-24 12:52:28", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\HVs_Integrais\\HV018.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4442843.0, "duration": 4442.84, "resolution": "1440x1080", "fps": 29.97}, "HV019.mov": {"size_mb": 12855.9661, "modified": "2012-09-24 16:48:27", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\HVs_Integrais\\HV019.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4062729.0, "duration": 4062.73, "resolution": "1440x1080", "fps": 29.97}, "HV020.mov": {"size_mb": 14281.2065, "modified": "2012-09-24 16:20:47", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Conexao Amazonica\\HVs_Integrais\\HV020.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4512446.0, "duration": 4512.45, "resolution": "1440x1080", "fps": 29.97}, "folder_size_gb": 72.101}, "folder_size_gb": 78.455}, "Pesacando com Redes 3G": {"Redes3G_Intitucional.mov": {"size_mb": 5754.1089, "modified": "2013-03-27 17:57:37", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Redes3G_Intitucional.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "60.000 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 306533.0, "duration": 306.53, "resolution": "1920x1080", "fps": 60.0}, "Depoimentos_Editados": {"HV01.mov": {"size_mb": 586.1444, "modified": "2013-01-29 11:09:30", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV01.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 185219.0, "duration": 185.22, "resolution": "1440x1080", "fps": 29.97}, "HV02.mov": {"size_mb": 485.0731, "modified": "2013-01-29 11:13:20", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV02.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 153287.0, "duration": 153.29, "resolution": "1440x1080", "fps": 29.97}, "HV03.mov": {"size_mb": 611.0982, "modified": "2013-01-29 11:17:03", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV03.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 193093.0, "duration": 193.09, "resolution": "1440x1080", "fps": 29.97}, "HV04.mov": {"size_mb": 544.5296, "modified": "2013-01-29 11:23:21", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV04.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 172072.0, "duration": 172.07, "resolution": "1440x1080", "fps": 29.97}, "HV05.mov": {"size_mb": 551.916, "modified": "2013-01-29 12:15:09", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV05.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 174408.0, "duration": 174.41, "resolution": "1440x1080", "fps": 29.97}, "HV06.mov": {"size_mb": 729.4043, "modified": "2013-01-29 12:19:33", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV06.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 230497.0, "duration": 230.5, "resolution": "1440x1080", "fps": 29.97}, "HV07.mov": {"size_mb": 639.8271, "modified": "2013-01-30 13:29:03", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV07.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 202202.0, "duration": 202.2, "resolution": "1440x1080", "fps": 29.97}, "HV08.mov": {"size_mb": 517.1428, "modified": "2013-01-30 13:33:51", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV08.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 163430.0, "duration": 163.43, "resolution": "1440x1080", "fps": 29.97}, "HV09.mov": {"size_mb": 866.3018, "modified": "2013-01-30 13:50:05", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV09.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 273774.0, "duration": 273.77, "resolution": "1440x1080", "fps": 29.97}, "HV10.mov": {"size_mb": 634.3382, "modified": "2013-01-30 13:46:24", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV10.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 200467.0, "duration": 200.47, "resolution": "1440x1080", "fps": 29.97}, "HV11.mov": {"size_mb": 478.0835, "modified": "2013-01-30 13:58:05", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV11.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 151051.0, "duration": 151.05, "resolution": "1440x1080", "fps": 29.97}, "HV12.mov": {"size_mb": 519.082, "modified": "2013-01-30 14:03:09", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV12.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 164031.0, "duration": 164.03, "resolution": "1440x1080", "fps": 29.97}, "HV13.mov": {"size_mb": 569.6538, "modified": "2013-01-30 14:07:47", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV13.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 180013.0, "duration": 180.01, "resolution": "1440x1080", "fps": 29.97}, "HV14.mov": {"size_mb": 374.0994, "modified": "2013-01-30 14:13:33", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV14.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 118218.0, "duration": 118.22, "resolution": "1440x1080", "fps": 29.97}, "HV15.mov": {"size_mb": 584.5551, "modified": "2013-01-30 14:19:35", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\Depoimentos_Editados\\HV15.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 184718.0, "duration": 184.72, "resolution": "1440x1080", "fps": 29.97}, "folder_size_gb": 8.488}, "HVs_Integrais": {"HV01.mov": {"size_mb": 21580.2131, "modified": "2013-03-28 10:30:12", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV01.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 6818685.0, "duration": 6818.69, "resolution": "1440x1080", "fps": 29.97}, "HV02.mov": {"size_mb": 14173.1045, "modified": "2013-03-28 10:54:23", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV02.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4478278.0, "duration": 4478.28, "resolution": "1440x1080", "fps": 29.97}, "HV03.mov": {"size_mb": 22035.946, "modified": "2013-03-28 11:40:48", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV03.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 6962663.0, "duration": 6962.66, "resolution": "1440x1080", "fps": 29.97}, "HV04.mov": {"size_mb": 17172.7286, "modified": "2013-03-28 12:25:33", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV04.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5426059.0, "duration": 5426.06, "resolution": "1440x1080", "fps": 29.97}, "HV05.mov": {"size_mb": 16361.1815, "modified": "2013-03-28 13:20:03", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV05.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5169636.0, "duration": 5169.64, "resolution": "1440x1080", "fps": 29.97}, "HV06.mov": {"size_mb": 18776.1731, "modified": "2013-03-28 13:54:05", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV06.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5932699.0, "duration": 5932.7, "resolution": "1440x1080", "fps": 29.97}, "HV07.mov": {"size_mb": 16979.8813, "modified": "2013-03-28 14:26:44", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV07.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5365098.0, "duration": 5365.1, "resolution": "1440x1080", "fps": 29.97}, "HV08.mov": {"size_mb": 13840.8827, "modified": "2013-03-28 15:27:39", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV08.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4373273.0, "duration": 4373.27, "resolution": "1440x1080", "fps": 29.97}, "HV09.mov": {"size_mb": 17454.6986, "modified": "2013-03-28 16:14:52", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV09.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5515148.0, "duration": 5515.15, "resolution": "1440x1080", "fps": 29.97}, "HV10.mov": {"size_mb": 25315.7554, "modified": "2013-03-28 17:05:46", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV10.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 7998999.0, "duration": 7999.0, "resolution": "1440x1080", "fps": 29.97}, "HV11.mov": {"size_mb": 18333.6864, "modified": "2013-03-28 17:51:58", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV11.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5792826.0, "duration": 5792.83, "resolution": "1440x1080", "fps": 29.97}, "HV12.mov": {"size_mb": 16805.7588, "modified": "2013-03-28 18:04:06", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV12.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5310110.0, "duration": 5310.11, "resolution": "1440x1080", "fps": 29.97}, "HV13.mov": {"size_mb": 23426.3381, "modified": "2013-01-31 17:33:15", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV13.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 7402002.0, "duration": 7402.0, "resolution": "1440x1080", "fps": 29.97}, "HV14.mov": {"size_mb": 12403.8595, "modified": "2013-01-31 17:40:18", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV14.mov", "category": "Video", "dimension": "1440x1080", "height": 1080, "aspect_ratio": "4:3 (SD)", "frame_rate": "29.970 fps", "codec": "MPEG Video", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 3919253.0, "duration": 3919.25, "resolution": "1440x1080", "fps": 29.97}, "HV15.mov": {"size_mb": 121361.8669, "modified": "2013-04-01 10:38:06", "extension": "MOV", "full_path": "D:\\Fundacao_Telefonica\\Pesacando com Redes 3G\\HVs_Integrais\\HV15.mov", "category": "Video", "dimension": "1280x1080", "height": 1080, "aspect_ratio": "1.19:1", "frame_rate": "29.970 fps", "codec": "DV", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 8729329.0, "duration": 8729.33, "resolution": "1280x1080", "fps": 29.97}, "folder_size_gb": 367.209}, "folder_size_gb": 381.316}, "folder_size_gb": 459.771}};
+
+const EXTENSIONS = {
+    "Video": ['mp4', 'mov', 'mkv', 'avi', 'm4v', 'mts', 'm2ts', 'wmv', 'flv', 'webm', 'vob', 'ogv', '3gp', 'mxf'],
+    "Audio": ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'pcm'],
+    "Image": ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'gif', 'bmp', 'webp', 'cr2', 'nef', 'arw', 'dng'],
+    "Textual": ['doc', 'docx', 'pdf', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx']
+};
+
+const ICONS = { "Video": "🎞️", "Audio": "🎧", "Image": "🖼️", "Textual": "📝", "Other": "📄" };
+
+function formatSmartSize(mbValue) {
+    if (!mbValue || mbValue === 0) return "0 B";
+    let bytes = mbValue * 1024 * 1024; 
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+    return bytes.toFixed(2) + " " + units[i];
+}
+
+function getIcon(name, isFolder) {
+    if (isFolder) return "📁";
+    const ext = name.split('.').pop().toLowerCase();
+    for (const [category, list] of Object.entries(EXTENSIONS)) {
+        if (list.includes(ext)) return ICONS[category];
+    }
+    return ICONS["Other"];
+}
+
+function formatTime(ms) {
+    if (!ms || ms === 0) return "N/A";
+    let totalSeconds = Math.floor(ms / 1000);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
+}
+
+function copyPreviewText() {
+    const box = document.getElementById('preview-text');
+    if (box) {
+        navigator.clipboard.writeText(box.textContent);
+        alert("Content copied to clipboard!");
+    }
+}
+
+function calculateFolderStats(node) {
+    let stats = { Video: { count: 0, size: 0 }, Audio: { count: 0, size: 0 }, Image: { count: 0, size: 0 }, Textual: { count: 0, size: 0 }, Other: { count: 0, size: 0 }, totalSize: 0 };
+    function traverse(curr) {
+        for (let key in curr) {
+            if (key === "folder_size_gb") continue;
+            let item = curr[key];
+            if (item.folder_size_gb !== undefined) traverse(item);
+            else {
+                let cat = item.category || "Other";
+                if (cat === "Images") cat = "Image";
+                if (!stats[cat]) cat = "Other";
+                stats[cat].count++;
+                stats[cat].size += item.size_mb || 0;
+                stats.totalSize += item.size_mb || 0;
+            }
+        }
+    }
+    traverse(node);
+    return stats;
+}
+
+function showMetadata(name, data, path) {
+    const panel = document.getElementById("metadata-panel");
+    const content = document.getElementById("meta-content");
+    panel.style.display = "block";
+
+    const isFolder = data.folder_size_gb !== undefined;
+    let resLabel = (data.height === 720) ? " (720p)" : (data.height === 1080) ? " (1080p)" : (data.height === 2160) ? " (4K)" : "";
+    const displayRes = (data.dimension || "N/A") + resLabel;
+
+    let html = `
+        <span class="meta-label">Filename</span><span class="meta-value">${name}</span>
+        <span class="meta-label">Path</span><span class="meta-value">${data.full_path || path.join("/")}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('${(data.full_path || "").replace(/\\/g, "\\\\")}')">Copy Path</button>
+        <span class="meta-label">Size</span><span class="meta-value" style="color:var(--accent); font-weight:bold;">${formatSmartSize(isFolder ? data.folder_size_gb * 1024 : data.size_mb)}</span>
+    `;
+
+    if (isFolder) {
+        const stats = calculateFolderStats(data);
+        const getPct = (size) => stats.totalSize > 0 ? ((size / stats.totalSize) * 100).toFixed(1) : 0;
+        html += `
+            <div class="stats-container">
+                <span class="meta-label">Content Breakdown</span>
+                <div class="stats-bar">
+                    <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Image.size)}%; background:var(--image)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Textual.size + stats.Other.size)}%; background:var(--other)"></div>
+                </div>
+                <div class="stat-row"><span>🎞️ Video</span><b>${stats.Video.count}</b></div>
+                <div class="stat-row"><span>🎧 Audio</span><b>${stats.Audio.count}</b></div>
+                <div class="stat-row"><span>🖼️ Images</span><b>${stats.Image.count}</b></div>
+                <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
+            </div>`;
+    } else {
+        html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
+        if (data.category === "Video") {
+            html += `<h3>Video Technical</h3>
+                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+        } else if (data.category === "Audio") {
+        html += `<h3>Audio Technical</h3>
+            <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+            <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+
+        }else if (data.category === "Image") {
+            html += `<h3>Image Technical</h3>
+                <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
+                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
+        }
+        
+        if (data.content_preview) {
+            html += `<h3>Document Content</h3>
+                     <div class="preview-box" id="preview-text"></div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
+        }
+    }
+
+    content.innerHTML = html;
+    if (data.content_preview) {
+        document.getElementById('preview-text').textContent = data.content_preview;
+    }
+}
+
+function renderColumn(node, level, path = []) {
+    const explorer = document.getElementById("explorer");
+    while (explorer.children.length > level) explorer.removeChild(explorer.lastChild);
+    const col = document.createElement("div"); col.className = "column";
+    const keys = Object.keys(node).filter(k => k !== "folder_size_gb").sort((a, b) => {
+        const aIsF = node[a].folder_size_gb !== undefined;
+        const bIsF = node[b].folder_size_gb !== undefined;
+        return (aIsF !== bIsF) ? bIsF - aIsF : a.localeCompare(b);
+    });
+    keys.forEach(name => {
+        const val = node[name];
+        const isFolder = val.folder_size_gb !== undefined;
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `<span class="icon">${getIcon(name, isFolder)}</span> <span class="item-text">${name}</span>`;
+        item.onclick = () => {
+            Array.from(col.children).forEach(c => c.classList.remove('active'));
+            item.classList.add('active');
+            showMetadata(name, val, path.concat(name));
+            if (isFolder) renderColumn(val, level + 1, path.concat(name));
+            else while (explorer.children.length > level + 1) explorer.removeChild(explorer.lastChild);
+        };
+        col.appendChild(item);
+    });
+    explorer.appendChild(col);
+}
+
+// NOVA FUNÇÃO PARA O ACERVO TOTAL
+function navigateToPath(targetPath) {
+    const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
+    let currentNode = TREE;
+    let currentPath = [];
+    
+    // Renderiza a primeira coluna
+    renderColumn(TREE, 0);
+
+    parts.forEach((part, index) => {
+        const columns = document.querySelectorAll('.column');
+        const activeColumn = columns[index];
+        if (!activeColumn) return;
+
+        const items = activeColumn.querySelectorAll('.item');
+        for (let item of items) {
+            const text = item.querySelector('.item-text').textContent;
+            if (text === part) {
+                item.click(); // Simula o clique para abrir a próxima coluna ou metadados
+                break;
+            }
+        }
+    });
+}
+
+function performSearch() {
+    const term = document.getElementById("search").value.toLowerCase();
+    const explorer = document.getElementById("explorer");
+    if (!term) { renderColumn(TREE, 0); return; }
+    const results = [];
+    function searchNode(node, currentPath) {
+        for (const key in node) {
+            if (key === "folder_size_gb") continue;
+            const item = node[key];
+            const isFolder = item.folder_size_gb !== undefined;
+            const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
+            if (isFolder) searchNode(item, currentPath.concat(key));
+        }
+    }
+    searchNode(TREE, ["Root"]);
+    explorer.innerHTML = "";
+    const col = document.createElement("div"); col.className = "column"; col.style.minWidth = "100%";
+    results.slice(0, 100).forEach(res => {
+        const div = document.createElement("div"); div.className = "item";
+        div.innerHTML = `<span class="icon">${getIcon(res.name, res.isFolder)}</span> <div><b>${res.name}</b><br><small>${res.path.join("/")}</small></div>`;
+        div.onclick = () => showMetadata(res.name, res.data, res.path);
+        col.appendChild(div);
+    });
+    explorer.appendChild(col);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderColumn(TREE, 0);
+    
+    // VERIFICA SE EXISTE UM CAMINHO NA URL (Ex: ?target=Pasta/Subpasta/Arquivo.mp4)
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    if (target) {
+        setTimeout(() => navigateToPath(target), 500); // Pequeno delay para garantir o carregamento
+    }
+});
+</script>
+</body>
+</html>
