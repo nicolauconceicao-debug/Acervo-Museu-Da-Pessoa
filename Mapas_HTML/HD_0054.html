@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Museum HD Archive Explorer v14</title>
+    <style>
+        :root { --bg: #f8f9fa; --sidebar-bg: #ffffff; --border: #e0e4e8; --accent: #007aff; --text: #1a1d21; --video: #ff3b30; --audio: #ffcc00; --image: #34c759; --other: #8e8e93; }
+        body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--text); }
+        header { background: #fff; padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+        .search-row { display: flex; gap: 10px; align-items: center; }
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #explorer { display: flex; flex: 1; overflow-x: auto; padding-bottom: 10px; }
+        #metadata-panel { width: 420px; background: var(--sidebar-bg); border-left: 1px solid var(--border); padding: 25px; display: none; overflow-y: auto; }
+        .column { min-width: 350px; max-width: 500px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid var(--border); overflow-y: auto; }
+        .item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; font-size: 13px; border-bottom: 1px solid #f8f8f8; }
+        .item:hover { background: #f0f7ff; }
+        .item.active { background: var(--accent); color: white !important; }
+        .icon { margin-right: 12px; font-size: 18px; }
+        .meta-label { font-weight: bold; font-size: 10px; color: #888; text-transform: uppercase; margin-top: 15px; display: block; letter-spacing: 0.5px;}
+        .meta-value { font-size: 13px; margin-top: 4px; display: block; color: var(--text); word-break: break-all;}
+        .stats-container { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+        .stats-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; background: #eee; }
+        .bar-segment { height: 100%; transition: width 0.3s; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; align-items: center;}
+        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 250px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap;}
+        .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
+        .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
+        h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="search-row">
+        <h2 style="margin:0; font-size: 18px;">🏛️ Acervo Museu Explorer</h2>
+        <input type="text" id="search" class="search-box" placeholder="Search filenames or content..." oninput="performSearch()">
+    </div>
+</header>
+<div id="main-container">
+    <div id="explorer"></div>
+    <div id="metadata-panel">
+        <h3 style="margin-top:0">Metadata Ingest</h3>
+        <div id="meta-content"></div>
+    </div>
+</div>
+
+<script>
+const TREE = {"PCSH_HV462-477": {"EXPORTS EDITADOS": {"MOV": {"462.mov": {"size_mb": 1091.9363, "modified": "2014-09-23 18:47:52", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\462.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 80514.0, "duration": 80.51, "resolution": "1920x1080", "fps": 29.97}, "463.mov": {"size_mb": 1581.7545, "modified": "2014-09-23 18:52:07", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\463.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 108242.0, "duration": 108.24, "resolution": "1920x1080", "fps": 29.97}, "464.mov": {"size_mb": 1136.2874, "modified": "2014-09-26 12:01:22", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\464.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 83550.0, "duration": 83.55, "resolution": "1920x1080", "fps": 29.97}, "465.mov": {"size_mb": 1142.7346, "modified": "2014-09-26 12:09:48", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\465.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 85652.0, "duration": 85.65, "resolution": "1920x1080", "fps": 29.97}, "466.mov": {"size_mb": 2007.6237, "modified": "2014-09-26 12:16:55", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\466.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 134368.0, "duration": 134.37, "resolution": "1920x1080", "fps": 29.97}, "467.mov": {"size_mb": 1602.9064, "modified": "2014-09-26 12:27:40", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\467.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 111512.0, "duration": 111.51, "resolution": "1920x1080", "fps": 29.97}, "468.mov": {"size_mb": 852.3632, "modified": "2014-09-26 12:34:04", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\468.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 66900.0, "duration": 66.9, "resolution": "1920x1080", "fps": 29.97}, "469.mov": {"size_mb": 1566.1472, "modified": "2014-09-26 12:43:17", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\469.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 107174.0, "duration": 107.17, "resolution": "1920x1080", "fps": 29.97}, "470.mov": {"size_mb": 1595.1047, "modified": "2014-10-01 16:58:19", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\470.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 110811.0, "duration": 110.81, "resolution": "1920x1080", "fps": 29.97}, "471.mov": {"size_mb": 1633.7074, "modified": "2014-10-17 15:40:24", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\471.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 114281.0, "duration": 114.28, "resolution": "1920x1080", "fps": 29.97}, "472.mov": {"size_mb": 2381.5045, "modified": "2014-10-28 14:32:59", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\472.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 156490.0, "duration": 156.49, "resolution": "1920x1080", "fps": 29.97}, "473.mov": {"size_mb": 2401.3513, "modified": "2014-10-28 14:47:19", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\473.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 158392.0, "duration": 158.39, "resolution": "1920x1080", "fps": 29.97}, "474.mov": {"size_mb": 2082.2815, "modified": "2014-10-01 17:13:01", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\474.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 139873.0, "duration": 139.87, "resolution": "1920x1080", "fps": 29.97}, "475.mov": {"size_mb": 3343.1381, "modified": "2014-10-17 16:10:58", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\475.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 209676.0, "duration": 209.68, "resolution": "1920x1080", "fps": 29.97}, "476.mov": {"size_mb": 3473.5662, "modified": "2014-10-17 16:48:31", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\476.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 222422.0, "duration": 222.42, "resolution": "1920x1080", "fps": 29.97}, "477.mov": {"size_mb": 1900.2811, "modified": "2014-10-28 14:58:07", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MOV\\477.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 128128.0, "duration": 128.13, "resolution": "1920x1080", "fps": 29.97}, "folder_size_gb": 29.094}, "MP4": {"462.mp4": {"size_mb": 43.7841, "modified": "2014-09-23 19:09:51", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\462.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 80514.0, "duration": 80.51, "resolution": "1920x1080", "fps": 29.97}, "463.mp4": {"size_mb": 61.4224, "modified": "2014-09-23 19:14:26", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\463.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 108242.0, "duration": 108.24, "resolution": "1920x1080", "fps": 29.97}, "464.mp4": {"size_mb": 45.194, "modified": "2014-09-26 12:10:14", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\464.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 83550.0, "duration": 83.55, "resolution": "1920x1080", "fps": 29.97}, "465.mp4": {"size_mb": 46.5108, "modified": "2014-09-26 12:18:04", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\465.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 85652.0, "duration": 85.65, "resolution": "1920x1080", "fps": 29.97}, "466.mp4": {"size_mb": 77.4487, "modified": "2014-09-26 12:25:48", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\466.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 134368.0, "duration": 134.37, "resolution": "1920x1080", "fps": 29.97}, "467.mp4": {"size_mb": 62.7344, "modified": "2014-09-26 12:36:15", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\467.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 111512.0, "duration": 111.51, "resolution": "1920x1080", "fps": 29.97}, "468.mp4": {"size_mb": 34.338, "modified": "2014-09-26 12:39:35", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\468.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 66900.0, "duration": 66.9, "resolution": "1920x1080", "fps": 29.97}, "469.mp4": {"size_mb": 60.3885, "modified": "2014-09-26 12:48:26", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\469.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 107174.0, "duration": 107.17, "resolution": "1920x1080", "fps": 29.97}, "470.mp4": {"size_mb": 62.0734, "modified": "2014-10-01 17:09:43", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\470.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 110811.0, "duration": 110.81, "resolution": "1920x1080", "fps": 29.97}, "471.mp4": {"size_mb": 64.5298, "modified": "2014-10-17 15:50:34", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\471.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 114281.0, "duration": 114.28, "resolution": "1920x1080", "fps": 29.97}, "472.mp4": {"size_mb": 38.7757, "modified": "2014-10-28 14:43:19", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\472.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 156490.0, "duration": 156.49, "resolution": "1920x1080", "fps": 29.97}, "473.mp4": {"size_mb": 92.6375, "modified": "2014-10-28 14:58:30", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\473.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 158392.0, "duration": 158.39, "resolution": "1920x1080", "fps": 29.97}, "474.mp4": {"size_mb": 81.074, "modified": "2014-10-01 17:21:26", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\474.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 139873.0, "duration": 139.87, "resolution": "1920x1080", "fps": 29.97}, "475.mp4": {"size_mb": 124.905, "modified": "2014-10-17 16:27:49", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\475.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 209676.0, "duration": 209.68, "resolution": "1920x1080", "fps": 29.97}, "476.mp4": {"size_mb": 132.994, "modified": "2014-10-17 17:12:41", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\476.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 222422.0, "duration": 222.42, "resolution": "1920x1080", "fps": 29.97}, "477.mp4": {"size_mb": 73.115, "modified": "2014-10-28 15:07:28", "extension": "MP4", "full_path": "H:\\PCSH_HV462-477\\EXPORTS EDITADOS\\MP4\\477.mp4", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "AVC", "audio_channels": "Stereo", "audio_codec": "AAC", "duration_ms": 128128.0, "duration": 128.13, "resolution": "1920x1080", "fps": 29.97}, "folder_size_gb": 1.076}, "folder_size_gb": 30.171}, "EXPORTS INTEGRA": {"HV_462.mov": {"size_mb": 64096.2491, "modified": "2014-06-20 17:04:15", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_462.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 3729930.0, "duration": 3729.93, "resolution": "1920x1080", "fps": 29.97}, "HV_463.mov": {"size_mb": 83693.0815, "modified": "2014-06-06 14:23:50", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_463.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4905539.0, "duration": 4905.54, "resolution": "1920x1080", "fps": 29.97}, "HV_464.mov": {"size_mb": 174312.5321, "modified": "2014-07-02 12:10:15", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_464.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 10155822.0, "duration": 10155.82, "resolution": "1920x1080", "fps": 29.97}, "HV_465.mov": {"size_mb": 72683.4864, "modified": "2014-07-18 13:03:45", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_465.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4336637.0, "duration": 4336.64, "resolution": "1920x1080", "fps": 29.97}, "HV_466.mov": {"size_mb": 127933.552, "modified": "2014-07-18 11:37:41", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_466.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 7427528.0, "duration": 7427.53, "resolution": "1920x1080", "fps": 29.97}, "HV_467.mov": {"size_mb": 57518.6686, "modified": "2014-07-25 10:26:12", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_467.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 3377477.0, "duration": 3377.48, "resolution": "1920x1080", "fps": 29.97}, "HV_468.mov": {"size_mb": 24870.1001, "modified": "2014-08-05 08:44:05", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_468.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 1439506.0, "duration": 1439.51, "resolution": "1920x1080", "fps": 29.97}, "HV_469.mov": {"size_mb": 123871.8518, "modified": "2014-08-05 09:58:36", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_469.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 7078412.0, "duration": 7078.41, "resolution": "1920x1080", "fps": 29.97}, "HV_470 parte 01.mov": {"size_mb": 96953.1523, "modified": "2014-08-10 23:01:49", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_470 parte 01.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5853153.0, "duration": 5853.15, "resolution": "1920x1080", "fps": 29.97}, "HV_470 parte 02.mov": {"size_mb": 144610.8866, "modified": "2014-09-13 21:44:00", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_470 parte 02.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 8581448.0, "duration": 8581.45, "resolution": "1920x1080", "fps": 29.97}, "HV_471.mov": {"size_mb": 69678.0243, "modified": "2014-08-10 11:46:36", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_471.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4121388.0, "duration": 4121.39, "resolution": "1920x1080", "fps": 29.97}, "HV_472.mov": {"size_mb": 44046.3657, "modified": "2014-08-18 19:24:43", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_472.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 2621288.0, "duration": 2621.29, "resolution": "1920x1080", "fps": 29.97}, "HV_473.mov": {"size_mb": 112582.227, "modified": "2014-09-08 17:45:03", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_473.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 6577845.0, "duration": 6577.85, "resolution": "1920x1080", "fps": 29.97}, "HV_474.mov": {"size_mb": 121522.2602, "modified": "2014-09-08 19:48:31", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_474.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 7119920.0, "duration": 7119.92, "resolution": "1920x1080", "fps": 29.97}, "HV_475.mov": {"size_mb": 86897.0873, "modified": "2014-09-12 20:14:14", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_475.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 4976210.0, "duration": 4976.21, "resolution": "1920x1080", "fps": 29.97}, "HV_476.mov": {"size_mb": 109708.6832, "modified": "2014-09-19 09:57:25", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_476.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 6552452.0, "duration": 6552.45, "resolution": "1920x1080", "fps": 29.97}, "HV_477.mov": {"size_mb": 88767.2298, "modified": "2014-09-19 11:36:01", "extension": "MOV", "full_path": "H:\\PCSH_HV462-477\\EXPORTS INTEGRA\\HV_477.mov", "category": "Video", "dimension": "1920x1080", "height": 1080, "aspect_ratio": "16:9 (HD)", "frame_rate": "29.970 fps", "codec": "ProRes", "audio_channels": "Stereo", "audio_codec": "PCM", "duration_ms": 5326560.0, "duration": 5326.56, "resolution": "1920x1080", "fps": 29.97}, "folder_size_gb": 1566.158}, "folder_size_gb": 1596.328}};
+
+const EXTENSIONS = {
+    "Video": ['mp4', 'mov', 'mkv', 'avi', 'm4v', 'mts', 'm2ts', 'wmv', 'flv', 'webm', 'vob', 'ogv', '3gp', 'mxf'],
+    "Audio": ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'pcm'],
+    "Image": ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'gif', 'bmp', 'webp', 'cr2', 'nef', 'arw', 'dng'],
+    "Textual": ['doc', 'docx', 'pdf', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx']
+};
+
+const ICONS = { "Video": "🎞️", "Audio": "🎧", "Image": "🖼️", "Textual": "📝", "Other": "📄" };
+
+function formatSmartSize(mbValue) {
+    if (!mbValue || mbValue === 0) return "0 B";
+    let bytes = mbValue * 1024 * 1024; 
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+    return bytes.toFixed(2) + " " + units[i];
+}
+
+function getIcon(name, isFolder) {
+    if (isFolder) return "📁";
+    const ext = name.split('.').pop().toLowerCase();
+    for (const [category, list] of Object.entries(EXTENSIONS)) {
+        if (list.includes(ext)) return ICONS[category];
+    }
+    return ICONS["Other"];
+}
+
+function formatTime(ms) {
+    if (!ms || ms === 0) return "N/A";
+    let totalSeconds = Math.floor(ms / 1000);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
+}
+
+function copyPreviewText() {
+    const box = document.getElementById('preview-text');
+    if (box) {
+        navigator.clipboard.writeText(box.textContent);
+        alert("Content copied to clipboard!");
+    }
+}
+
+function calculateFolderStats(node) {
+    let stats = { Video: { count: 0, size: 0 }, Audio: { count: 0, size: 0 }, Image: { count: 0, size: 0 }, Textual: { count: 0, size: 0 }, Other: { count: 0, size: 0 }, totalSize: 0 };
+    function traverse(curr) {
+        for (let key in curr) {
+            if (key === "folder_size_gb") continue;
+            let item = curr[key];
+            if (item.folder_size_gb !== undefined) traverse(item);
+            else {
+                let cat = item.category || "Other";
+                if (cat === "Images") cat = "Image";
+                if (!stats[cat]) cat = "Other";
+                stats[cat].count++;
+                stats[cat].size += item.size_mb || 0;
+                stats.totalSize += item.size_mb || 0;
+            }
+        }
+    }
+    traverse(node);
+    return stats;
+}
+
+function showMetadata(name, data, path) {
+    const panel = document.getElementById("metadata-panel");
+    const content = document.getElementById("meta-content");
+    panel.style.display = "block";
+
+    const isFolder = data.folder_size_gb !== undefined;
+    let resLabel = (data.height === 720) ? " (720p)" : (data.height === 1080) ? " (1080p)" : (data.height === 2160) ? " (4K)" : "";
+    const displayRes = (data.dimension || "N/A") + resLabel;
+
+    let html = `
+        <span class="meta-label">Filename</span><span class="meta-value">${name}</span>
+        <span class="meta-label">Path</span><span class="meta-value">${data.full_path || path.join("/")}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('${(data.full_path || "").replace(/\\/g, "\\\\")}')">Copy Path</button>
+        <span class="meta-label">Size</span><span class="meta-value" style="color:var(--accent); font-weight:bold;">${formatSmartSize(isFolder ? data.folder_size_gb * 1024 : data.size_mb)}</span>
+    `;
+
+    if (isFolder) {
+        const stats = calculateFolderStats(data);
+        const getPct = (size) => stats.totalSize > 0 ? ((size / stats.totalSize) * 100).toFixed(1) : 0;
+        html += `
+            <div class="stats-container">
+                <span class="meta-label">Content Breakdown</span>
+                <div class="stats-bar">
+                    <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Image.size)}%; background:var(--image)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Textual.size + stats.Other.size)}%; background:var(--other)"></div>
+                </div>
+                <div class="stat-row"><span>🎞️ Video</span><b>${stats.Video.count}</b></div>
+                <div class="stat-row"><span>🎧 Audio</span><b>${stats.Audio.count}</b></div>
+                <div class="stat-row"><span>🖼️ Images</span><b>${stats.Image.count}</b></div>
+                <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
+            </div>`;
+    } else {
+        html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
+        if (data.category === "Video") {
+            html += `<h3>Video Technical</h3>
+                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+        } else if (data.category === "Audio") {
+        html += `<h3>Audio Technical</h3>
+            <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+            <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+
+        }else if (data.category === "Image") {
+            html += `<h3>Image Technical</h3>
+                <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
+                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
+        }
+        
+        if (data.content_preview) {
+            html += `<h3>Document Content</h3>
+                     <div class="preview-box" id="preview-text"></div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
+        }
+    }
+
+    content.innerHTML = html;
+    if (data.content_preview) {
+        document.getElementById('preview-text').textContent = data.content_preview;
+    }
+}
+
+function renderColumn(node, level, path = []) {
+    const explorer = document.getElementById("explorer");
+    while (explorer.children.length > level) explorer.removeChild(explorer.lastChild);
+    const col = document.createElement("div"); col.className = "column";
+    const keys = Object.keys(node).filter(k => k !== "folder_size_gb").sort((a, b) => {
+        const aIsF = node[a].folder_size_gb !== undefined;
+        const bIsF = node[b].folder_size_gb !== undefined;
+        return (aIsF !== bIsF) ? bIsF - aIsF : a.localeCompare(b);
+    });
+    keys.forEach(name => {
+        const val = node[name];
+        const isFolder = val.folder_size_gb !== undefined;
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `<span class="icon">${getIcon(name, isFolder)}</span> <span class="item-text">${name}</span>`;
+        item.onclick = () => {
+            Array.from(col.children).forEach(c => c.classList.remove('active'));
+            item.classList.add('active');
+            showMetadata(name, val, path.concat(name));
+            if (isFolder) renderColumn(val, level + 1, path.concat(name));
+            else while (explorer.children.length > level + 1) explorer.removeChild(explorer.lastChild);
+        };
+        col.appendChild(item);
+    });
+    explorer.appendChild(col);
+}
+
+// NOVA FUNÇÃO PARA O ACERVO TOTAL
+function navigateToPath(targetPath) {
+    const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
+    let currentNode = TREE;
+    let currentPath = [];
+    
+    // Renderiza a primeira coluna
+    renderColumn(TREE, 0);
+
+    parts.forEach((part, index) => {
+        const columns = document.querySelectorAll('.column');
+        const activeColumn = columns[index];
+        if (!activeColumn) return;
+
+        const items = activeColumn.querySelectorAll('.item');
+        for (let item of items) {
+            const text = item.querySelector('.item-text').textContent;
+            if (text === part) {
+                item.click(); // Simula o clique para abrir a próxima coluna ou metadados
+                break;
+            }
+        }
+    });
+}
+
+function performSearch() {
+    const term = document.getElementById("search").value.toLowerCase();
+    const explorer = document.getElementById("explorer");
+    if (!term) { renderColumn(TREE, 0); return; }
+    const results = [];
+    function searchNode(node, currentPath) {
+        for (const key in node) {
+            if (key === "folder_size_gb") continue;
+            const item = node[key];
+            const isFolder = item.folder_size_gb !== undefined;
+            const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
+            if (isFolder) searchNode(item, currentPath.concat(key));
+        }
+    }
+    searchNode(TREE, ["Root"]);
+    explorer.innerHTML = "";
+    const col = document.createElement("div"); col.className = "column"; col.style.minWidth = "100%";
+    results.slice(0, 100).forEach(res => {
+        const div = document.createElement("div"); div.className = "item";
+        div.innerHTML = `<span class="icon">${getIcon(res.name, res.isFolder)}</span> <div><b>${res.name}</b><br><small>${res.path.join("/")}</small></div>`;
+        div.onclick = () => showMetadata(res.name, res.data, res.path);
+        col.appendChild(div);
+    });
+    explorer.appendChild(col);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderColumn(TREE, 0);
+    
+    // VERIFICA SE EXISTE UM CAMINHO NA URL (Ex: ?target=Pasta/Subpasta/Arquivo.mp4)
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    if (target) {
+        setTimeout(() => navigateToPath(target), 500); // Pequeno delay para garantir o carregamento
+    }
+});
+</script>
+</body>
+</html>
