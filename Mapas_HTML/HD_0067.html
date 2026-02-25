@@ -26,6 +26,9 @@
         .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
         .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
         h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+        /* CSS para o Preview de Imagem */
+        .img-preview-container { margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px; text-align: center; border: 1px solid #ddd; }
+        .img-preview-container img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid #fff; }
     </style>
 </head>
 <body>
@@ -80,6 +83,32 @@ function formatTime(ms) {
     let minutes = Math.floor((totalSeconds % 3600) / 60);
     let seconds = totalSeconds % 60;
     return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
+}
+
+// FUNÇÃO PARA TRATAR ERRO DE IMAGEM E TESTAR VÁRIOS CAMINHOS
+function tryLoadThumb(imgElement, thumbName, fileName) {
+    let nameToUse = (thumbName || "").split('/').pop().split('\\').pop();
+    if (!nameToUse) nameToUse = fileName.split('.')[0] + ".jpg";
+    if (!nameToUse.toLowerCase().endsWith('.jpg')) nameToUse += ".jpg";
+
+    const paths = [
+        `Repositorio_Site/thumbnails/${nameToUse}`,
+        `../Repositorio_Site/thumbnails/${nameToUse}`,
+        `Repositorio_Site/thumbnails/${nameToUse}`,
+        `../Repositorio_Site/thumbnails/${nameToUse}`
+    ];
+
+    let current = 0;
+    imgElement.onerror = function() {
+        current++;
+        if (current < paths.length) {
+            this.src = paths[current];
+        } else {
+            this.onerror = null;
+            this.src = "https://via.placeholder.com/150?text=Sem+Preview";
+        }
+    };
+    imgElement.src = paths[0];
 }
 
 function copyPreviewText() {
@@ -146,17 +175,29 @@ function showMetadata(name, data, path) {
             </div>`;
     } else {
         html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
+        
+        // BLOCO DE PREVIEW DE IMAGEM
+        if (data.thumbnail || data.category === "Image") {
+            html += `<h3>Preview</h3>
+                     <div class="img-preview-container">
+                        <img id="main-preview-img" src="" alt="Thumbnail">
+                     </div>`;
+            setTimeout(() => {
+                const img = document.getElementById('main-preview-img');
+                if (img) tryLoadThumb(img, data.thumbnail, name);
+            }, 50);
+        }
+
         if (data.category === "Video") {
             html += `<h3>Video Technical</h3>
                 <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
                 <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
                 <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
         } else if (data.category === "Audio") {
-        html += `<h3>Audio Technical</h3>
-            <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
-            <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
-
-        }else if (data.category === "Image") {
+            html += `<h3>Audio Technical</h3>
+                <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+                <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+        } else if (data.category === "Image") {
             html += `<h3>Image Technical</h3>
                 <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
                 <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
@@ -202,13 +243,8 @@ function renderColumn(node, level, path = []) {
     explorer.appendChild(col);
 }
 
-// NOVA FUNÇÃO PARA O ACERVO TOTAL
 function navigateToPath(targetPath) {
     const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
-    let currentNode = TREE;
-    let currentPath = [];
-    
-    // Renderiza a primeira coluna
     renderColumn(TREE, 0);
 
     parts.forEach((part, index) => {
@@ -220,7 +256,7 @@ function navigateToPath(targetPath) {
         for (let item of items) {
             const text = item.querySelector('.item-text').textContent;
             if (text === part) {
-                item.click(); // Simula o clique para abrir a próxima coluna ou metadados
+                item.click();
                 break;
             }
         }
@@ -256,12 +292,10 @@ function performSearch() {
 
 document.addEventListener("DOMContentLoaded", () => {
     renderColumn(TREE, 0);
-    
-    // VERIFICA SE EXISTE UM CAMINHO NA URL (Ex: ?target=Pasta/Subpasta/Arquivo.mp4)
     const urlParams = new URLSearchParams(window.location.search);
     const target = urlParams.get('target');
     if (target) {
-        setTimeout(() => navigateToPath(target), 500); // Pequeno delay para garantir o carregamento
+        setTimeout(() => navigateToPath(target), 500);
     }
 });
 </script>
