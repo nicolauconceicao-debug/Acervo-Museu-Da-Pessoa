@@ -26,9 +26,10 @@
         .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
         .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
         h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
-        /* Estilo para garantir que o preview apareça */
-        .img-preview-box { margin-top: 15px; padding: 10px; background: #eee; border-radius: 8px; text-align: center; }
-        .img-preview-box img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 1px solid #fff; }
+        
+        /* Novos estilos para o container de Imagem */
+        .img-preview-container { margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px; text-align: center; border: 1px dashed #ccc; }
+        .img-preview-container img { max-width: 100%; max-height: 300px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -85,29 +86,33 @@ function formatTime(ms) {
     return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
 }
 
-// FUNÇÃO PARA TESTAR VÁRIOS CAMINHOS DE IMAGEM
-function tryLoadingImage(imgElement, thumbName) {
-    const fileName = thumbName.split('/').pop().split('\\').pop();
-    const cleanName = fileName.replace('.jpg.jpg', '.jpg'); // Corrige erro de extensão dupla
+// FUNÇÃO DE CARREGAMENTO DE IMAGEM COM CORREÇÃO DE EXTENSÃO DUPLICADA
+function tryLoadImage(imgElement, originalPath) {
+    if (!originalPath) return;
     
-    const pathsToTry = [
-        `Repositorio_Site/thumonails/${cleanName}`,
-        `../Repositorio_Site/thumonails/${cleanName}`,
-        `Repositorio_Site/thumbnails/${cleanName}`,
-        `../Repositorio_Site/thumbnails/${cleanName}`
-    ];
+    // 1. Extrai apenas o nome do arquivo
+    let fileName = originalPath.split('/').pop().split('\\').pop();
     
-    let currentIdx = 0;
+    // 2. Remove extensões duplicadas (ex: .jpg.jpg -> .jpg)
+    fileName = fileName.replace(/\.(jpg|jpeg|png|tif|tiff)\.(jpg|jpeg|png|tif|tiff)$/i, '.$1');
+    
+    // 3. Define o caminho para a pasta local thumbnails/
+    const localPath = `thumbnails/${fileName}`;
+    
     imgElement.onerror = function() {
-        currentIdx++;
-        if (currentIdx < pathsToTry.length) {
-            this.src = pathsToTry[currentIdx];
-        } else {
-            this.onerror = null;
-            this.src = 'https://via.placeholder.com/150?text=Sem+Preview';
-        }
+        this.onerror = null;
+        this.src = 'https://via.placeholder.com/150?text=Sem+Preview';
     };
-    imgElement.src = pathsToTry[0];
+    
+    imgElement.src = localPath;
+}
+
+function copyPreviewText() {
+    const box = document.getElementById('preview-text');
+    if (box) {
+        navigator.clipboard.writeText(box.textContent);
+        alert("Content copied to clipboard!");
+    }
 }
 
 function calculateFolderStats(node) {
@@ -135,7 +140,10 @@ function showMetadata(name, data, path) {
     const panel = document.getElementById("metadata-panel");
     const content = document.getElementById("meta-content");
     panel.style.display = "block";
+
     const isFolder = data.folder_size_gb !== undefined;
+    let resLabel = (data.height === 720) ? " (720p)" : (data.height === 1080) ? " (1080p)" : (data.height === 2160) ? " (4K)" : "";
+    const displayRes = (data.dimension || "N/A") + resLabel;
 
     let html = `
         <span class="meta-label">Filename</span><span class="meta-value">${name}</span>
@@ -147,33 +155,60 @@ function showMetadata(name, data, path) {
     if (isFolder) {
         const stats = calculateFolderStats(data);
         const getPct = (size) => stats.totalSize > 0 ? ((size / stats.totalSize) * 100).toFixed(1) : 0;
-        html += `<div class="stats-container">
-                    <span class="meta-label">Content Breakdown</span>
-                    <div class="stats-bar">
-                        <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
-                        <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
-                        <div class="bar-segment" style="width:${getPct(stats.Image.size)}%; background:var(--image)"></div>
-                        <div class="bar-segment" style="width:${getPct(stats.Textual.size + stats.Other.size)}%; background:var(--other)"></div>
-                    </div>
-                    <div class="stat-row"><span>🎞️ Video</span><b>${stats.Video.count}</b></div>
-                    <div class="stat-row"><span>🖼️ Images</span><b>${stats.Image.count}</b></div>
-                </div>`;
+        html += `
+            <div class="stats-container">
+                <span class="meta-label">Content Breakdown</span>
+                <div class="stats-bar">
+                    <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Image.size)}%; background:var(--image)"></div>
+                    <div class="bar-segment" style="width:${getPct(stats.Textual.size + stats.Other.size)}%; background:var(--other)"></div>
+                </div>
+                <div class="stat-row"><span>🎞️ Video</span><b>${stats.Video.count}</b></div>
+                <div class="stat-row"><span>🎧 Audio</span><b>${stats.Audio.count}</b></div>
+                <div class="stat-row"><span>🖼️ Images</span><b>${stats.Image.count}</b></div>
+                <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
+            </div>`;
     } else {
-        if (data.thumbnail || data.category === "Image") {
-            html += `<h3>Preview</h3><div class="img-preview-box"><img id="preview-img" src="" alt="Thumbnail"></div>`;
+        // ÁREA DE PREVIEW DE IMAGEM
+        if (data.category === "Image" || data.thumbnail) {
+            html += `<h3>Preview</h3>
+                     <div class="img-preview-container">
+                        <img id="preview-img" src="" alt="Carregando...">
+                     </div>`;
             setTimeout(() => {
                 const img = document.getElementById('preview-img');
-                if (img) tryLoadingImage(img, data.thumbnail || name);
-            }, 50);
+                tryLoadImage(img, data.thumbnail || name);
+            }, 10);
         }
-        
+
+        html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
         if (data.category === "Video") {
             html += `<h3>Video Technical</h3>
-                <span class="meta-label">Resolution</span><span class="meta-value">${data.dimension || "N/A"}</span>
-                <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>`;
+                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+        } else if (data.category === "Audio") {
+            html += `<h3>Audio Technical</h3>
+                <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+                <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+        } else if (data.category === "Image") {
+            html += `<h3>Image Technical</h3>
+                <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
+                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
+        }
+        
+        if (data.content_preview) {
+            html += `<h3>Document Content</h3>
+                     <div class="preview-box" id="preview-text"></div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
         }
     }
+
     content.innerHTML = html;
+    if (data.content_preview) {
+        document.getElementById('preview-text').textContent = data.content_preview;
+    }
 }
 
 function renderColumn(node, level, path = []) {
@@ -203,6 +238,24 @@ function renderColumn(node, level, path = []) {
     explorer.appendChild(col);
 }
 
+function navigateToPath(targetPath) {
+    const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
+    renderColumn(TREE, 0);
+    parts.forEach((part, index) => {
+        const columns = document.querySelectorAll('.column');
+        const activeColumn = columns[index];
+        if (!activeColumn) return;
+        const items = activeColumn.querySelectorAll('.item');
+        for (let item of items) {
+            const text = item.querySelector('.item-text').textContent;
+            if (text === part) {
+                item.click();
+                break;
+            }
+        }
+    });
+}
+
 function performSearch() {
     const term = document.getElementById("search").value.toLowerCase();
     const explorer = document.getElementById("explorer");
@@ -212,9 +265,10 @@ function performSearch() {
         for (const key in node) {
             if (key === "folder_size_gb") continue;
             const item = node[key];
-            const match = key.toLowerCase().includes(term);
-            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder: item.folder_size_gb !== undefined });
-            if (item.folder_size_gb !== undefined) searchNode(item, currentPath.concat(key));
+            const isFolder = item.folder_size_gb !== undefined;
+            const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
+            if (isFolder) searchNode(item, currentPath.concat(key));
         }
     }
     searchNode(TREE, ["Root"]);
@@ -229,7 +283,14 @@ function performSearch() {
     explorer.appendChild(col);
 }
 
-document.addEventListener("DOMContentLoaded", () => renderColumn(TREE, 0));
+document.addEventListener("DOMContentLoaded", () => {
+    renderColumn(TREE, 0);
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    if (target) {
+        setTimeout(() => navigateToPath(target), 500);
+    }
+});
 </script>
 </body>
 </html>
