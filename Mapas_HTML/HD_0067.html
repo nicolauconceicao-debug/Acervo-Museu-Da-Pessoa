@@ -157,6 +157,19 @@ function showMetadata(name, data, path) {
                 <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
                 <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
             
+            if (data.thumbnail) {
+                // 1. Pegamos o caminho que está no JSON (ex: thumbnails/thumb_foto.jpg)
+                // 2. Ajustamos para o caminho real onde as fotos estão (Repositorio_Site/thumonails/)
+                // 3. Usamos "../" para sair da pasta Mapas_HTML
+                const correctThumbPath = data.thumbnail.replace('thumbnails/', '../Repositorio_Site/thumonails/');
+
+                html += `<div class="image-preview-container">
+                            <span class="meta-label" style="margin-top:0; margin-bottom:8px; display:block;">Preview</span>
+                            <img src="${correctThumbPath}" alt="Thumbnail" onerror="this.src='https://via.placeholder.com/150?text=Erro+no+Caminho'">
+                         </div>`;
+            }
+        }
+            
             // ADICIONA O PREVIEW DE IMAGEM SE HOUVER THUMBNAIL
             if (data.thumbnail) {
                 const correctThumbPath = data.thumbnail.replace('thumbnails/', '../Repositorio_Site/thumbnails/');
