@@ -170,8 +170,9 @@ function showMetadata(name, data, path) {
         
         if (data.category === "Video") {
             html += `<h3>Video Technical</h3>
-                <span class="meta-label">Resolution</span><span class="meta-value">${data.dimension || "N/A"}</span>
-                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>`;
+                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
         } else if (data.category === "Audio") {
             html += `<h3>Audio Technical</h3>
                 <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>`;
