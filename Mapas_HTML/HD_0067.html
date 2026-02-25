@@ -169,6 +169,9 @@ function showMetadata(name, data, path) {
         html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
         
         if (data.category === "Video") {
+            // Garante que displayRes exista ou usa a dimensão original
+            const displayRes = data.dimension || "N/A"; 
+            
             html += `<h3>Video Technical</h3>
                 <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
                 <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
