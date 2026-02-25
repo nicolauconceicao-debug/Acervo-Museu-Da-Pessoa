@@ -26,8 +26,6 @@
         .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
         .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
         h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
-        
-        /* ESTILOS DO PREVIEW DE IMAGEM */
         .image-preview-container { margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
         .image-preview-container img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #fff; }
     </style>
@@ -158,24 +156,11 @@ function showMetadata(name, data, path) {
                 <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
             
             if (data.thumbnail) {
-                // 1. Pegamos o caminho que está no JSON (ex: thumbnails/thumb_foto.jpg)
-                // 2. Ajustamos para o caminho real onde as fotos estão (Repositorio_Site/thumonails/)
-                // 3. Usamos "../" para sair da pasta Mapas_HTML
+                // Ajuste de caminho para a pasta real thumonails (com erro de digitação)
                 const correctThumbPath = data.thumbnail.replace('thumbnails/', '../Repositorio_Site/thumonails/');
-
                 html += `<div class="image-preview-container">
                             <span class="meta-label" style="margin-top:0; margin-bottom:8px; display:block;">Preview</span>
-                            <img src="${correctThumbPath}" alt="Thumbnail" onerror="this.src='https://via.placeholder.com/150?text=Erro+no+Caminho'">
-                         </div>`;
-            }
-        }
-            
-            // ADICIONA O PREVIEW DE IMAGEM SE HOUVER THUMBNAIL
-            if (data.thumbnail) {
-                const correctThumbPath = data.thumbnail.replace('thumbnails/', '../Repositorio_Site/thumbnails/');
-                html += `<div class="image-preview-container">
-                            <span class="meta-label" style="margin-top:0; margin-bottom:8px; display:block;">Preview</span>
-                            <img src="${data.thumbnail}" alt="Thumbnail">
+                            <img src="${correctThumbPath}" alt="Thumbnail" onerror="this.src='https://via.placeholder.com/150?text=Preview+Indisponivel'">
                          </div>`;
             }
         }
@@ -183,7 +168,7 @@ function showMetadata(name, data, path) {
         if (data.content_preview) {
             html += `<h3>Document Content</h3>
                      <div class="preview-box" id="preview-text"></div>
-                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
+                     <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('preview-text').textContent)">Copy Content</button>`;
         }
     }
 
