@@ -22,7 +22,7 @@
         .stats-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; background: #eee; }
         .bar-segment { height: 100%; transition: width 0.3s; }
         .stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; align-items: center;}
-        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 250px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap;}
+        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap; border-left: 4px solid #e6e2c0;}
         .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
         .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
         h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
@@ -98,7 +98,9 @@ function copyPreviewText() {
     const box = document.getElementById('preview-text');
     if (box) {
         navigator.clipboard.writeText(box.textContent);
-        alert("Content copied to clipboard!");
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy Content"; }, 2000);
     }
 }
 
@@ -153,7 +155,6 @@ function showMetadata(name, data, path) {
                 <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
             </div>`;
     } else {
-        // PREVIEW DE IMAGEM
         if (data.category === "Image" || data.thumbnail) {
             html += `<h3>Preview</h3>
                      <div class="img-preview-container">
@@ -162,12 +163,11 @@ function showMetadata(name, data, path) {
             setTimeout(() => {
                 const img = document.getElementById('preview-img');
                 tryLoadImage(img, data.thumbnail, name);
-            }, 10);
+            }, 50);
         }
 
         html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
         
-        // DADOS TÉCNICOS
         if (data.category === "Video") {
             html += `<h3>Video Technical</h3>
                 <span class="meta-label">Resolution</span><span class="meta-value">${data.dimension || "N/A"}</span>
@@ -181,18 +181,22 @@ function showMetadata(name, data, path) {
                 <span class="meta-label">DPI</span><span class="meta-value">${data.dpi || "N/A"}</span>`;
         }
 
-        // PREVIEW DE TEXTO (AQUI ESTAVA O ERRO)
+        // NOVIDADE: Verifica explicitamente por content_preview ou categoria textual
         if (data.content_preview) {
             html += `<h3>Document Content</h3>
-                     <div class="preview-box" id="preview-text"></div>
+                     <div class="preview-box" id="preview-text">Loading content...</div>
                      <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
         }
     }
+    
     content.innerHTML = html;
 
-    // Injeta o texto separadamente para evitar problemas com caracteres especiais no HTML
+    // Sincronização garantida: espera o DOM atualizar para injetar o texto
     if (data.content_preview) {
-        document.getElementById('preview-text').textContent = data.content_preview;
+        setTimeout(() => {
+            const box = document.getElementById('preview-text');
+            if (box) box.textContent = data.content_preview;
+        }, 10);
     }
 }
 
