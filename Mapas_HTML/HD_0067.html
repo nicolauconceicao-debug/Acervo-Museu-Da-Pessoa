@@ -159,6 +159,7 @@ function showMetadata(name, data, path) {
             
             // ADICIONA O PREVIEW DE IMAGEM SE HOUVER THUMBNAIL
             if (data.thumbnail) {
+                const correctThumbPath = data.thumbnail.replace('thumbnails/', '../Repositorio_Site/thumbnails/');
                 html += `<div class="image-preview-container">
                             <span class="meta-label" style="margin-top:0; margin-bottom:8px; display:block;">Preview</span>
                             <img src="${data.thumbnail}" alt="Thumbnail">
