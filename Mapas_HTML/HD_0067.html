@@ -86,23 +86,20 @@ function formatTime(ms) {
 
 function tryLoadImage(imgElement, thumbnailPath, originalName) {
     if (!thumbnailPath && !originalName) return;
-    
-    let path;
-    if (thumbnailPath) {
-        // Se já temos o caminho da thumb (ex: thumbnails/thumb_foto.jpg), usamos ele
-        path = thumbnailPath;
-    } else {
-        // Fallback: Tenta construir o nome da thumb manualmente
-        const nameOnly = originalName.split('.').slice(0, -1).join('.');
-        path = `thumbnails/thumb_${nameOnly}.jpg`;
-    }
-    
+    let path = thumbnailPath || `thumbnails/thumb_${originalName.split('.').slice(0, -1).join('.')}.jpg`;
     imgElement.onerror = function() {
         this.onerror = null;
         this.src = 'https://via.placeholder.com/150?text=Sem+Preview';
     };
-    
     imgElement.src = path;
+}
+
+function copyPreviewText() {
+    const box = document.getElementById('preview-text');
+    if (box) {
+        navigator.clipboard.writeText(box.textContent);
+        alert("Content copied to clipboard!");
+    }
 }
 
 function calculateFolderStats(node) {
@@ -156,6 +153,7 @@ function showMetadata(name, data, path) {
                 <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
             </div>`;
     } else {
+        // PREVIEW DE IMAGEM
         if (data.category === "Image" || data.thumbnail) {
             html += `<h3>Preview</h3>
                      <div class="img-preview-container">
@@ -169,22 +167,33 @@ function showMetadata(name, data, path) {
 
         html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
         
+        // DADOS TÉCNICOS
         if (data.category === "Video") {
             html += `<h3>Video Technical</h3>
                 <span class="meta-label">Resolution</span><span class="meta-value">${data.dimension || "N/A"}</span>
-                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
-                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>`;
         } else if (data.category === "Audio") {
             html += `<h3>Audio Technical</h3>
-                <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
-                <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+                <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>`;
         } else if (data.category === "Image") {
             html += `<h3>Image Technical</h3>
                 <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
-                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi || "N/A"} / ${data.color_mode || "N/A"}</span>`;
+                <span class="meta-label">DPI</span><span class="meta-value">${data.dpi || "N/A"}</span>`;
+        }
+
+        // PREVIEW DE TEXTO (AQUI ESTAVA O ERRO)
+        if (data.content_preview) {
+            html += `<h3>Document Content</h3>
+                     <div class="preview-box" id="preview-text"></div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
         }
     }
     content.innerHTML = html;
+
+    // Injeta o texto separadamente para evitar problemas com caracteres especiais no HTML
+    if (data.content_preview) {
+        document.getElementById('preview-text').textContent = data.content_preview;
+    }
 }
 
 function renderColumn(node, level, path = []) {
@@ -224,7 +233,8 @@ function performSearch() {
             if (key === "folder_size_gb") continue;
             const item = node[key];
             const isFolder = item.folder_size_gb !== undefined;
-            if (key.toLowerCase().includes(term)) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
+            const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
             if (isFolder) searchNode(item, currentPath.concat(key));
         }
     }
