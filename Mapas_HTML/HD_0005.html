@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Museum HD Archive Explorer v14</title>
+    <title>HD_0005</title>
     <style>
         :root { --bg: #f8f9fa; --sidebar-bg: #ffffff; --border: #e0e4e8; --accent: #007aff; --text: #1a1d21; --video: #ff3b30; --audio: #ffcc00; --image: #34c759; --other: #8e8e93; }
         body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--text); }
@@ -22,10 +22,12 @@
         .stats-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; background: #eee; }
         .bar-segment { height: 100%; transition: width 0.3s; }
         .stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; align-items: center;}
-        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 250px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap;}
+        .preview-box { background: #fffef0; border: 1px solid #e6e2c0; padding: 15px; font-size: 12px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; line-height: 1.5; margin-top: 10px; color: #333; white-space: pre-wrap; border-left: 4px solid #e6e2c0;}
         .copy-btn { margin-top: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
         .search-box { padding: 10px 15px; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border); outline: none; }
         h3 { border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 4px; margin-top: 25px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+        .img-preview-container { margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px; text-align: center; border: 1px dashed #ccc; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+        .img-preview-container img { max-width: 100%; max-height: 300px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -38,7 +40,7 @@
 <div id="main-container">
     <div id="explorer"></div>
     <div id="metadata-panel">
-        <h3 style="margin-top:0">Metadata Ingest</h3>
+        <h3 style="margin-top:0">Metadata</h3>
         <div id="meta-content"></div>
     </div>
 </div>
@@ -48,7 +50,7 @@ const TREE = {"Vale Memória (CVRD) [Cabines e Imagens de Cobertura]": {"CB": {"
 
 const EXTENSIONS = {
     "Video": ['mp4', 'mov', 'mkv', 'avi', 'm4v', 'mts', 'm2ts', 'wmv', 'flv', 'webm', 'vob', 'ogv', '3gp', 'mxf'],
-    "Audio": ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'pcm'],
+    "Audio": ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff', 'pcm', 'aif'],
     "Image": ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'gif', 'bmp', 'webp', 'cr2', 'nef', 'arw', 'dng'],
     "Textual": ['doc', 'docx', 'pdf', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx']
 };
@@ -82,11 +84,23 @@ function formatTime(ms) {
     return [hours, minutes, seconds].map(v => v < 10 ? "0" + v : v).join(":");
 }
 
+function tryLoadImage(imgElement, thumbnailPath, originalName) {
+    if (!thumbnailPath && !originalName) return;
+    let path = thumbnailPath || `thumbnails/thumb_${originalName.split('.').slice(0, -1).join('.')}.jpg`;
+    imgElement.onerror = function() {
+        this.onerror = null;
+        this.src = 'https://via.placeholder.com/150?text=Sem+Preview';
+    };
+    imgElement.src = path;
+}
+
 function copyPreviewText() {
     const box = document.getElementById('preview-text');
     if (box) {
         navigator.clipboard.writeText(box.textContent);
-        alert("Content copied to clipboard!");
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy Content"; }, 2000);
     }
 }
 
@@ -99,7 +113,6 @@ function calculateFolderStats(node) {
             if (item.folder_size_gb !== undefined) traverse(item);
             else {
                 let cat = item.category || "Other";
-                if (cat === "Images") cat = "Image";
                 if (!stats[cat]) cat = "Other";
                 stats[cat].count++;
                 stats[cat].size += item.size_mb || 0;
@@ -117,14 +130,11 @@ function showMetadata(name, data, path) {
     panel.style.display = "block";
 
     const isFolder = data.folder_size_gb !== undefined;
-    let resLabel = (data.height === 720) ? " (720p)" : (data.height === 1080) ? " (1080p)" : (data.height === 2160) ? " (4K)" : "";
-    const displayRes = (data.dimension || "N/A") + resLabel;
-
     let html = `
-        <span class="meta-label">Filename</span><span class="meta-value">${name}</span>
-        <span class="meta-label">Path</span><span class="meta-value">${data.full_path || path.join("/")}</span>
+        <span class="meta-label">Nome</span><span class="meta-value">${name}</span>
+        <span class="meta-label">Caminho</span><span class="meta-value">${data.full_path || path.join("/")}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText('${(data.full_path || "").replace(/\\/g, "\\\\")}')">Copy Path</button>
-        <span class="meta-label">Size</span><span class="meta-value" style="color:var(--accent); font-weight:bold;">${formatSmartSize(isFolder ? data.folder_size_gb * 1024 : data.size_mb)}</span>
+        <span class="meta-label">Tamanho</span><span class="meta-value" style="color:var(--accent); font-weight:bold;">${formatSmartSize(isFolder ? data.folder_size_gb * 1024 : data.size_mb)}</span>
     `;
 
     if (isFolder) {
@@ -132,7 +142,7 @@ function showMetadata(name, data, path) {
         const getPct = (size) => stats.totalSize > 0 ? ((size / stats.totalSize) * 100).toFixed(1) : 0;
         html += `
             <div class="stats-container">
-                <span class="meta-label">Content Breakdown</span>
+                <span class="meta-label">Conteúdo</span>
                 <div class="stats-bar">
                     <div class="bar-segment" style="width:${getPct(stats.Video.size)}%; background:var(--video)"></div>
                     <div class="bar-segment" style="width:${getPct(stats.Audio.size)}%; background:var(--audio)"></div>
@@ -145,36 +155,81 @@ function showMetadata(name, data, path) {
                 <div class="stat-row"><span>📄 Docs / Other</span><b>${stats.Textual.count + stats.Other.count}</b></div>
             </div>`;
     } else {
-        html += `<span class="meta-label">Modified</span><span class="meta-value">${data.modified || "N/A"}</span>`;
-        if (data.category === "Video") {
-            html += `<h3>Video Technical</h3>
-                <span class="meta-label">Resolution</span><span class="meta-value">${displayRes}</span>
-                <span class="meta-label">Duration / Audio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
-                <span class="meta-label">Aspect / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
-        } else if (data.category === "Audio") {
-        html += `<h3>Audio Technical</h3>
-            <span class="meta-label">Duration</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
-            <span class="meta-label">Sample Rate</span><span class="meta-value">${data.sample_rate ? data.sample_rate + " Hz" : "N/A"}</span>
-            <span class="meta-label">Channels</span><span class="meta-value">${data.audio_channels || "N/A"}</span>
-            <span class="meta-label">Bitrate</span><span class="meta-value">${data.bitrate ? Math.round(data.bitrate / 1000) + " kbps" : "N/A"}</span>`;
-
-        }else if (data.category === "Image") {
-            html += `<h3>Image Technical</h3>
-                <span class="meta-label">Dimensions</span><span class="meta-value">${data.dimension || "N/A"}</span>
-                <span class="meta-label">DPI / Color Mode</span><span class="meta-value">${data.dpi ? data.dpi + " dpi" : "N/A"} / ${data.color_mode || "N/A"}</span>`;
+        if (data.category === "Image" || data.thumbnail) {
+            html += `<h3>Preview</h3>
+                     <div class="img-preview-container">
+                        <img id="preview-img" src="" alt="Carregando...">
+                     </div>`;
+            setTimeout(() => {
+                const img = document.getElementById('preview-img');
+                tryLoadImage(img, data.thumbnail, name);
+            }, 50);
         }
+
+        html += `<span class="meta-label">Modificado</span><span class="meta-value">${data.modified || "N/A"}</span>`;
         
+        if (data.category === "Video") {
+            // Garante que displayRes exista ou usa a dimensão original
+            const displayRes = data.dimension || "N/A"; 
+            
+            html += `<h3>Especificações Técnicas</h3>
+                <span class="meta-label">Resolução</span><span class="meta-value">${displayRes}</span>
+                <span class="meta-label">Duração / Áudio</span><span class="meta-value">${formatTime(data.duration_ms)} / ${data.audio_channels || "N/A"}</span>
+                <span class="meta-label">Aspecto / FPS</span><span class="meta-value">${data.aspect_ratio || "N/A"} / ${data.frame_rate || "N/A"}</span>`;
+        } else if (data.category === "Audio") {
+            html += `<h3>Especificações Técnicas</h3>
+                <span class="meta-label">Duração</span><span class="meta-value">${formatTime(data.duration_ms)}</span>
+                <span class="meta-label">Canais</span><span class="meta-value">${data.audio_channels || "N/A"}</span>`;
+        } else if (data.category === "Image") {
+            html += `<h3>Especificações Técnicas</h3>
+                <span class="meta-label">Dimensões</span><span class="meta-value">${data.dimension || "N/A"}</span>
+                <span class="meta-label">DPI</span><span class="meta-value">${data.dpi || "N/A"}</span>`;
+        }
+
+        // NOVIDADE: Verifica explicitamente por content_preview ou categoria textual
         if (data.content_preview) {
-            html += `<h3>Document Content</h3>
-                     <div class="preview-box" id="preview-text"></div>
-                     <button class="copy-btn" onclick="copyPreviewText()">Copy Content</button>`;
+            html += `<h3>Conteúdo do Documento</h3>
+                     <div class="preview-box" id="preview-text">Loading content...</div>
+                     <button class="copy-btn" onclick="copyPreviewText()">Copiar Conteúdo</button>`;
         }
     }
-
+    
     content.innerHTML = html;
+
+    // Sincronização garantida: espera o DOM atualizar para injetar o texto
     if (data.content_preview) {
-        document.getElementById('preview-text').textContent = data.content_preview;
+        setTimeout(() => {
+            const box = document.getElementById('preview-text');
+            if (box) box.textContent = data.content_preview;
+        }, 10);
     }
+}
+
+function navigateToPath(path) {
+    // Limpa a busca e renderiza a visualização normal
+    document.getElementById("search").value = "";
+    renderColumn(TREE, 0);
+
+    let currentNode = TREE;
+    // O primeiro item do path costuma ser "Root" ou o nome do HD, pulamos ele se necessário
+    const pathParts = path.slice(1); 
+
+    pathParts.forEach((part, index) => {
+        setTimeout(() => {
+            const columns = document.querySelectorAll('.column');
+            const currentColumn = columns[index];
+            if (!currentColumn) return;
+
+            const items = currentColumn.querySelectorAll('.item');
+            for (let item of items) {
+                if (item.querySelector('.item-text').textContent === part) {
+                    item.click(); // Simula o clique no item para abrir a próxima coluna ou metadados
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    break;
+                }
+            }
+        }, (index + 1) * 100); // Pequeno delay para a coluna anterior renderizar
+    });
 }
 
 function renderColumn(node, level, path = []) {
@@ -204,35 +259,11 @@ function renderColumn(node, level, path = []) {
     explorer.appendChild(col);
 }
 
-// NOVA FUNÇÃO PARA O ACERVO TOTAL
-function navigateToPath(targetPath) {
-    const parts = targetPath.split('/').filter(p => p !== "Root" && p !== "");
-    let currentNode = TREE;
-    let currentPath = [];
-    
-    // Renderiza a primeira coluna
-    renderColumn(TREE, 0);
-
-    parts.forEach((part, index) => {
-        const columns = document.querySelectorAll('.column');
-        const activeColumn = columns[index];
-        if (!activeColumn) return;
-
-        const items = activeColumn.querySelectorAll('.item');
-        for (let item of items) {
-            const text = item.querySelector('.item-text').textContent;
-            if (text === part) {
-                item.click(); // Simula o clique para abrir a próxima coluna ou metadados
-                break;
-            }
-        }
-    });
-}
-
 function performSearch() {
     const term = document.getElementById("search").value.toLowerCase();
     const explorer = document.getElementById("explorer");
     if (!term) { renderColumn(TREE, 0); return; }
+    
     const results = [];
     function searchNode(node, currentPath) {
         for (const key in node) {
@@ -240,32 +271,30 @@ function performSearch() {
             const item = node[key];
             const isFolder = item.folder_size_gb !== undefined;
             const match = key.toLowerCase().includes(term) || (item.content_preview && item.content_preview.toLowerCase().includes(term));
+            
             if (match) results.push({ name: key, data: item, path: currentPath.concat(key), isFolder });
             if (isFolder) searchNode(item, currentPath.concat(key));
         }
     }
-    searchNode(TREE, ["Root"]);
+    
+    searchNode(TREE, ["Root"]); // Certifique-se que o nome base aqui condiz com seu JSON
     explorer.innerHTML = "";
     const col = document.createElement("div"); col.className = "column"; col.style.minWidth = "100%";
+    
     results.slice(0, 100).forEach(res => {
         const div = document.createElement("div"); div.className = "item";
-        div.innerHTML = `<span class="icon">${getIcon(res.name, res.isFolder)}</span> <div><b>${res.name}</b><br><small>${res.path.join("/")}</small></div>`;
-        div.onclick = () => showMetadata(res.name, res.data, res.path);
+        div.innerHTML = `<span class="icon">${getIcon(res.name, res.isFolder)}</span> 
+                         <div><b>${res.name}</b><br><small style="color:#888">${res.path.join(" › ")}</small></div>`;
+        
+        // AQUI ESTÁ A MUDANÇA: Chama a navegação em vez de apenas mostrar metadados
+        div.onclick = () => navigateToPath(res.path);
+        
         col.appendChild(div);
     });
     explorer.appendChild(col);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    renderColumn(TREE, 0);
-    
-    // VERIFICA SE EXISTE UM CAMINHO NA URL (Ex: ?target=Pasta/Subpasta/Arquivo.mp4)
-    const urlParams = new URLSearchParams(window.location.search);
-    const target = urlParams.get('target');
-    if (target) {
-        setTimeout(() => navigateToPath(target), 500); // Pequeno delay para garantir o carregamento
-    }
-});
+document.addEventListener("DOMContentLoaded", () => renderColumn(TREE, 0));
 </script>
 </body>
 </html>
